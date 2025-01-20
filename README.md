@@ -4,5 +4,7 @@ This is a stock manager web application that will help give suggestions to users
 
 # Run Project:
 run the frontend by:
-    ```cd frontend
-    ```npm run serve
+    ``` 
+    cd frontend
+    npm run serve
+    ```
