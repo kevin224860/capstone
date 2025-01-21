@@ -1,8 +1,13 @@
 # capstone
 
-This is a stock manager webapplication that will help give suggestions to users to help diversify their portfolio
+This is a stock manager web application that will help give suggestions to users to help diversify their portfolio
 
 # Run Project:
-run the frontend by:
-    cd fronend
+run the frontend by:<br>
+    ```
+    cd frontend 
+    ```
+    <br>
+    ```
     npm run serve
+    ```
