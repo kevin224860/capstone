@@ -23,34 +23,62 @@
         />
       </div>
       <button type="submit">Login</button>
+      <div v-if="errorMessage" class="error-message">
+        {{ errorMessage }}
+      </div>
       <div class="create-account">
-        <h6>Don't have an account? Click <router-link to="/signup">here</router-link> to create an account</h6>
+        <h6>
+          Don't have an account? Click <router-link to="/signup">here</router-link> to create an account.
+        </h6>
       </div>
     </form>
   </div>
 </template>
 
 <script>
+import axios from "axios";
+
 export default {
   name: "LoginPage",
   data() {
     return {
       email: "",
       password: "",
+      errorMessage: "",
     };
   },
   methods: {
-    handleLogin() {
-      if (this.email && this.password) {
-        console.log("Email:", this.email);
-        console.log("Password:", this.password);
-        alert("Login successful!");
-        // Add your login logic here (e.g., API call)
-      } else {
-        alert("Please fill in all fields.");
+  async handleLogin() {
+    //make sure taht email and password aren't null
+    if (this.email && this.password) {
+      try {
+        // send email and password to the API to authenticate
+        const response = await axios.post(`${process.env.VUE_APP_URL}${process.env.VUE_APP_LOGIN}`, {
+          email: this.email,
+          password: this.password,
+        });
+        
+        //get token and store it for local session
+        const token = response.data.token;
+        localStorage.setItem("token", token);
+        axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+        //go to the dashboard route
+        this.$router.push("/dashboard");
+
+      } catch (error) {
+        if (error.response) {
+          this.errorMessage = error.response.data.message || "Login failed.";
+        } else {
+          this.errorMessage = "An error occurred. Please try again later.";
+        }
       }
-    },
+    } else {
+      this.errorMessage = "Please fill in all fields.";
+    }
   },
+},
+
 };
 </script>
 
@@ -75,19 +103,15 @@ h1 {
   margin-bottom: 15px;
   display: flex;
   flex-direction: column;
-  align-items: center;
 }
 
 label {
-  display: block;
   margin-bottom: 5px;
   font-weight: bold;
 }
 
 input {
-  width: 100%;
   padding: 10px;
-  margin-bottom: 10px;
   border: 1px solid #ccc;
   border-radius: 4px;
 }
@@ -105,5 +129,31 @@ button {
 
 button:hover {
   background-color: #0056b3;
+}
+
+.error-message {
+  color: red;
+  font-size: 14px;
+  margin-top: 10px;
+  text-align: center;
+}
+
+.create-account {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.create-account h6 {
+  font-size: 14px;
+  color: #555;
+}
+
+.create-account a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.create-account a:hover {
+  text-decoration: underline;
 }
 </style>
