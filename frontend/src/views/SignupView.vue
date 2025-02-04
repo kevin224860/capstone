@@ -1,7 +1,7 @@
 <template>
     <div class="signup-container">
       <h1>Sign Up</h1>
-      <form @submit.prevent="handleSignup">
+      <form @submit.prevent="signup">
         <div class="form-group">
           <label for="firstName">First Name:</label>
           <input
@@ -64,6 +64,7 @@
   </template>
   
   <script>
+  import axios from "axios";
   export default {
     name: "SignupPage",
     data() {
@@ -76,23 +77,22 @@
       };
     },
     methods: {
-      handleSignup() {
-        if (this.firstName && this.lastName && this.email && this.password && this.confirmPassword) {
-          if (this.password !== this.confirmPassword) {
-            alert("Passwords do not match.");
-            return  ;
-          }
-          console.log("First Name:", this.firstName);
-          console.log("Last Name:", this.lastName);
-          console.log("Email:", this.email);
-          console.log("Password:", this.password);
-          alert("Signup successful!");
-          // Add your signup logic here (e.g., API call)
-        } else {
-          alert("Please fill in all fields.");
+      // method that gets called to send the signup info to the backend 
+      async signup() {
+        try {
+          const response = await axios.post(`${process.env.VUE_APP_URL}${process.env.VUE_APP_SIGNUP}`, {
+            firstName: this.firstName,
+            lastName: this.lastName,
+            email: this.email,
+            password: this.password,
+          });
+          alert("Account created " + response.firstName);
+          this.$router.push("/login"); // Redirect to login page after signup
+        } catch (error) {
+          alert(error.response.data.error);
         }
-      },
-    },
+      }
+    }
   };
   </script>
   
