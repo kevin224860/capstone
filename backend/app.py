@@ -15,7 +15,8 @@ app = Flask(__name__)
 bcrypt = Bcrypt(app)
 
 # CORS allows the frontend
-CORS(app, supports_credentials=True, origins=[os.getenv('FRONTEND_URL')], allow_headers=["Content-Type", "Authorization"])
+CORS(app, supports_credentials=True, origins=[os.getenv('FRONTEND_URL')],
+     allow_headers=["Content-Type", "Authorization"])
 
 app.config["JWT_SECRET_KEY"] = os.getenv("SECRET_KEY",
                                          "your_secret_key")  # add in your secret key in for the encryption
@@ -83,7 +84,6 @@ def signup():
 # API used to log in to an account
 @app.route('/api/login', methods=['POST'])
 def login():
-
     # fetch the login data from the frontend
     data = request.get_json()
     email = data['email']
@@ -141,6 +141,40 @@ def get_dashboard():
         }), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# going to need to add in jwt authentication later
+@app.route("/api/portfolio", methods=["GET"])
+# @jwt_required()
+def get_portfolio():
+    # gets the identity of the user from jwt
+    # user_email = get_jwt_identity()
+
+    sampleData = [
+        {
+            'code': 'AMZN',
+            'industry': 'tech',
+            'number': '20',
+            'price': '200.15'
+        },
+        {
+            'code': 'MSFT',
+            'industry': 'tech',
+            'number': '14',
+            'price': '409.75'
+        },
+        {
+            'code': 'MMM',
+            'industry': 'Industrials',
+            'number': '5',
+            'price': '149.87'
+        }
+    ]
+
+    return jsonify({
+        'portfolio': sampleData,
+        'status': 'success'
+    })
 
 
 if __name__ == '__main__':
