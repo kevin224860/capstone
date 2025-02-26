@@ -2,82 +2,39 @@
   <div class="dashboard-container">
     <div class="content">
       <h1 v-if="firstName">Hello, {{ firstName }}! Welcome to your Dashboard</h1>
-      <h1 v-else>Welcome to your Dashboard</h1>
+      <h1 v-else>ERROR Cannot connect to account</h1>
 
-      <!-- Desktop View -->
-      <div class="portfolio-box desktop-view" v-if="!isMobile && portfolio.length > 0">
-        <h2>Your Portfolio</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Code</th>
-              <th>Industry</th>
-              <th>Number</th>
-              <th>Price (per share)</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="item in portfolio" :key="item.code">
-              <td>{{ item.code }}</td>
-              <td>{{ item.industry }}</td>
-              <td>{{ item.number }}</td>
-              <td>${{ item.price }}</td>
-              <td>
-                <button class="edit-btn">Edit</button>
-                <button class="delete-btn">Delete</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <PortfolioBox :portfolio="portfolio" :isMobile="isMobile" />
+
+      <div class="options">
+        <button class="add-stock-btn">Document Stock <i class="fa-solid fa-plus"> </i></button>
+        <button class="generate-suggestion-btn">Get Suggestions <i class="fa-solid fa-bolt"> </i></button>
       </div>
-
-      <!-- Mobile View -->
-      <div class="portfolio-box mobile-view" v-if="isMobile && portfolio.length > 0">
-        <h2>Your Portfolio</h2>
-        <div v-for="(item, index) in portfolio" :key="item.code" class="stock-card">
-          <div class="stock-header" @click="toggleExpand(index)">
-            <h3>{{ item.code }}</h3>
-            <i :class="expandedIndex === index ? 'fa-solid fa-angle-up' : 'fa-solid fa-angle-down'"></i>
-          </div>
-          
-          <div v-if="expandedIndex === index" class="stock-details">
-            <p><strong>Industry:</strong> {{ item.industry }}</p>
-            <p><strong>Number:</strong> {{ item.number }}</p>
-            <p><strong>Price per share:</strong> ${{ item.price }}</p>
-            <div class="button-group">
-              <button class="edit-btn">Edit</button>
-              <button class="delete-btn">Delete</button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <button class="add-stock-btn">Add New Stock</button>
-
-      
     </div>
   </div>
 </template>
 
 <script>
 import axios from "axios";
+import PortfolioBox from "@/components/PortfolioBox.vue";
 
 export default {
   name: "DashboardView",
+  components: {
+    PortfolioBox
+  },
   data() {
     return {
       firstName: "",
       portfolio: [],
-      expandedIndex: null,
-      isMobile: window.innerWidth <= 768,
+      isMobile: window.innerWidth <= 790,
     };
   },
-  
   async created() {
-    window.addEventListener("resize", this.updateScreenSize); 
+    window.addEventListener("resize", this.updateScreenSize);
     this.updateScreenSize();
 
-    const token = localStorage.getItem("token"); 
+    const token = localStorage.getItem("token");
     if (!token) {
       console.warn("No token found, redirecting to login...");
       this.$router.push("/login");
@@ -99,42 +56,32 @@ export default {
       this.$router.push("/login");
     }
   },
-
   methods: {
     async getPortfolio() {
       try {
         const path = `${process.env.VUE_APP_URL}${process.env.VUE_APP_PORTFOLIO}`;
         const res = await axios.get(path, { withCredentials: true });
-        this.portfolio = res.data.portfolio || res.data; 
+        this.portfolio = res.data.portfolio || res.data;
       } catch (err) {
         console.error("Error fetching portfolio:", err);
       }
     },
-
-    toggleExpand(index) {
-      this.expandedIndex = this.expandedIndex === index ? null : index;
-    },
-
     updateScreenSize() {
-      this.isMobile = window.innerWidth <= 768; 
+      this.isMobile = window.innerWidth <= 790;
     },
   },
-
   beforeUnmount() {
-    window.removeEventListener("resize", this.updateScreenSize); 
+    window.removeEventListener("resize", this.updateScreenSize);
   },
 };
 </script>
-
 <style scoped>
 
 .dashboard-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
   font-family: Arial, sans-serif;
-  background-color: #f4f4f9;
   padding: 20px;
 }
 
@@ -142,7 +89,11 @@ export default {
   text-align: center;
   width: 100%;
   max-width: 800px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
+
 
 .portfolio-box {
   background: white;
@@ -150,8 +101,8 @@ export default {
   border-radius: 10px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   margin-top: 20px;
-  width: 90%;
-  max-width: 600px;
+  width: 100%;
+  max-width: 800px;
   text-align: center;
 }
 
@@ -166,8 +117,23 @@ export default {
 
 table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
   margin-top: 10px;
+  border: 2px solid black;
+  border-radius: 10px;
+  border-spacing: 0;
+}
+
+th:first-child {
+  border-top-left-radius: 8px;
+}
+
+th:last-child {
+  border-top-right-radius: 8px;
+}
+
+tbody tr:last-child td:first-child {
+  border-bottom-left-radius: 10px;
 }
 
 th, td {
@@ -238,11 +204,27 @@ button {
   color: white;
 }
 
+.edit-btn:hover {
+  background: #1a6b2d;
+  color: white;
+}
+
 .delete-btn {
   background: #dc3545;
   color: white;
 }
 
+.delete-btn:hover {
+  background: #a32734;
+  color: white;
+}
+
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+  gap: 25px;
+}
 .add-stock-btn {
   display: block;
   margin: 20px auto;
@@ -257,7 +239,21 @@ button {
   background: #0056b3;
 }
 
-@media (max-width: 768px) {
+.generate-suggestion-btn{
+  display: block;
+  margin: 20px auto;
+  background: #007bff;
+  color: white;
+  padding: 10px 15px;
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+.generate-suggestion-btn:hover{
+  background: #0056b3;
+}
+
+@media (max-width: 790px) {
   .desktop-view {
     display: none;
   }
@@ -265,4 +261,21 @@ button {
     display: block;
   }
 }
+
+/* Expand transition */
+.expand-enter-active, .expand-leave-active {
+  transition: max-height 0.3s ease-out, opacity 0.3s ease-in-out;
+  overflow: hidden;
+}
+
+.expand-enter-from, .expand-leave-to {
+  max-height: 0;
+  opacity: 0;
+}
+
+.expand-enter-to, .expand-leave-from {
+  max-height: 200px; /* Adjust this based on content height */
+  opacity: 1;
+}
+
 </style>
