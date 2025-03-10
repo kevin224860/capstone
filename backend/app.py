@@ -17,6 +17,7 @@ bcrypt = Bcrypt(app)
 # CORS allows the frontend
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
+
 app.config["JWT_SECRET_KEY"] = os.getenv("SECRET_KEY",
                                          "your_secret_key")  # add in your secret key in for the encryption
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=30)  # jwt token expires in 30 minutes
@@ -182,10 +183,89 @@ def get_portfolio():
     except Exception as e:
         print(f"🔥 Error in /api/portfolio: {str(e)}")  # Log error
         return jsonify({"error": str(e)}), 500
+@app.route("/api/suggestions", methods=["GET"])
+@jwt_required()
+def get_suggestions():
+    user_email = get_jwt_identity()
+    
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        
+        # Get user ID
+        cur.execute("SELECT user_id FROM AccountUser WHERE email = %s", (user_email,))
+        user = cur.fetchone()
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+        user_id = user['user_id']
 
+        # Get all industries with minimum count
+        cur.execute("""
+            WITH industry_counts AS (
+                SELECT i.industry_id, COUNT(*)::INT
+                FROM StockEntry s
+                JOIN Industry i ON s.industry_id = i.industry_id
+                WHERE user_id = %s
+                GROUP BY i.industry_id
+            )
+            SELECT industry_id
+            FROM industry_counts
+            WHERE count = (SELECT MIN(count) FROM industry_counts)
+        """, (user_id,))
+        
+        min_industries = [row['industry_id'] for row in cur.fetchall()]
 
+        # Get suggestions from all minimum industries
+        cur.execute("""
+            SELECT sp.ticker_symbol AS ticker,
+                   sp.name AS name,
+                   i.name AS industry,
+                   ai.rating AS rating
+            FROM AISuggestions ai
+            JOIN StockPool sp ON ai.stock_id = sp.stock_id
+            JOIN Industry i ON ai.industry_id = i.industry_id
+            WHERE ai.industry_id = ANY(%s)
+            AND sp.ticker_symbol NOT IN (
+                SELECT stock FROM StockEntry WHERE user_id = %s
+            )
+            ORDER BY ai.rating DESC
+            LIMIT 3
+        """, (min_industries, user_id))
+        
+        suggestions = cur.fetchall()
 
+        # If less than 3 suggestions, fill with other industries
+        if len(suggestions) < 3:
+            cur.execute("""
+                SELECT sp.ticker_symbol AS ticker,
+                       sp.name AS name,
+                       i.name AS industry,
+                       ai.rating AS rating
+                FROM AISuggestions ai
+                JOIN StockPool sp ON ai.stock_id = sp.stock_id
+                JOIN Industry i ON ai.industry_id = i.industry_id
+                WHERE sp.ticker_symbol NOT IN (
+                    SELECT stock FROM StockEntry WHERE user_id = %s
+                )
+                ORDER BY ai.rating DESC
+                LIMIT %s
+            """, (user_id, 3 - len(suggestions)))
+            suggestions += cur.fetchall()
 
+        # Convert ratings
+        for suggestion in suggestions:
+            rating = suggestion['rating']
+            suggestion['confidence'] = int((rating / 5) * 100)
+            suggestion['rating'] = "Strong Buy" if rating >= 4.5 else "Buy" if rating >= 4.0 else "Hold"
+
+        return jsonify({'suggestions': suggestions[:3]}), 200
+
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
 
 if __name__ == '__main__':
     app.run(debug=True)
