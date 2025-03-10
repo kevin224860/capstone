@@ -3,6 +3,8 @@ import HomeView from '@/views/HomeView.vue';
 import LoginView from '@/views/LoginView.vue';
 import SignupView from '@/views/SignupView.vue';
 import DashboardView from '@/views/DashboardView.vue';
+import StockSuggestion from '@/views/StockSuggestion.vue';
+
 
 const routes = [
   {
@@ -19,6 +21,11 @@ const routes = [
     path: '/signup',
     name: 'signup',
     component: SignupView,
+  },
+  {
+    path: '/suggestions',
+    name: 'StockSuggestions',
+    component: StockSuggestion
   },
   {
     path: '/dashboard',
