@@ -16,15 +16,15 @@
         </thead>
         <tbody>
           <tr v-for="item in portfolio" :key="item.code">
-            <td>{{ item[0] }}</td>
-            <td>{{ item[1] }}</td>
-            <td>{{ item[2] }}</td>
-            <td>${{ item[3] }}</td>
-            <td>{{ formatDate(item[4]) }}</td>
+            <td>{{ item.stock }}</td>
+            <td>{{ item.name }}</td>
+            <td>{{ item.number }}</td>
+            <td>${{ item.price_per_share }}</td>
+            <td>{{ formatDate(item.date) }}</td>
             <td>
                 <div class="action-buttons">
-                    <button class="edit-btn">Edit <i class="fa-regular fa-pen-to-square"></i></button>
-                    <button class="delete-btn">Delete <i class="fa-solid fa-trash"></i></button>
+                    <button class="edit-btn" @click="editStock(item)">Edit <i class="fa-regular fa-pen-to-square"></i></button>
+                    <button class="delete-btn" @click="deleteStock(item.entry_ID)">Delete <i class="fa-solid fa-trash"></i></button>
                 </div>
             </td>
           </tr>
@@ -35,36 +35,49 @@
       <div class="mobile-view" v-if="isMobile">
         <div v-for="(item, index) in portfolio" :key="item.code" class="stock-card">
           <div class="stock-header" @click="toggleExpand(index)">
-            <h3>{{ item[0] }}</h3>
+            <h3>{{ item.stock }}</h3>
             <i :class="expandedIndex === index ? 'fa-solid fa-angle-up' : 'fa-solid fa-angle-down'"></i>
           </div>
           <transition name="expand">
             <div v-if="expandedIndex === index" class="stock-details">
-              <p><strong>Industry:</strong> {{ item[1] }}</p>
-              <p><strong>Number:</strong> {{ item[2] }}</p>
-              <p><strong>Price per share:</strong> ${{ item[3] }}</p>
-              <p><strong>Date:</strong> {{ formatDate(item[4]) }}</p>
+              <p><strong>Industry:</strong> {{ item.name }}</p>
+              <p><strong>Number:</strong> {{ item.number }}</p>
+              <p><strong>Price per share:</strong> ${{ item.price_per_share }}</p>
+              <p><strong>Date:</strong> {{ formatDate(item.date) }}</p>
               <div class="button-group">
-                <button class="edit-btn">Edit <i class="fa-regular fa-pen-to-square"></i></button>
-                <button class="delete-btn">Delete <i class="fa-solid fa-trash"></i></button>
+                <button class="edit-btn" @click="editStock(item)">Edit <i class="fa-regular fa-pen-to-square"></i></button>
+                <button class="delete-btn" @click="deleteStock(item.entry_ID)">Delete <i class="fa-solid fa-trash"></i></button>
               </div>
             </div>
           </transition>
         </div>
       </div>
     </div>
+
+    <EditComponent 
+      :show="isModalVisible" 
+      :stock="selectedStock"
+      @close="isModalVisible = false"
+    />
   </template>
   
   <script>
+  import axios from "axios";
+  import EditComponent from './EditComponent.vue';
+
+
   export default {
-    
+    components: { EditComponent },
     props: {
       portfolio: Array,
       isMobile: Boolean
     },
     data() {
       return {
-        expandedIndex: null
+        localPortfolio: [...this.portfolio],
+        expandedIndex: null,
+        isModalVisible: false,
+        selectedStock: null
       };
     },
     methods: {
@@ -90,8 +103,38 @@
 
         return new Intl.DateTimeFormat("en-US").format(date);
         
+      },
+
+      editStock(stock) {
+        this.selectedStock = { ...stock }; // Clone stock to prevent direct modification
+        this.isModalVisible = true;
+        console.log(this.selectedStock);
+      },
+
+      // Send delete request to backend
+      async deleteStock(stockId) {
+        const confirmDelete = window.confirm("Are you sure you want to delete this stock?");
+  
+        if (!confirmDelete) {
+          console.log("Stock deletion cancelled");
+          return;
+        }
+        
+        try {
+          const token = localStorage.getItem("token");
+          await axios.delete(`http://localhost:5000/api/portfolio/${stockId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          console.log(`Stock with ID: ${stockId} deleted`);
+
+          // Refresh or fetch the updated portfolio
+          window.location.reload();
+
+        } catch (error) {
+          console.error("Error deleting stock:", error);
+        }
       }
-      
     }
   };
   </script>

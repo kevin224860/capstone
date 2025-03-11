@@ -10,7 +10,7 @@
       </div>
       <div class="auth-buttons">
   <v-btn text color="primary" @click="$router.push('/login')">Login</v-btn>
-  <v-btn color="primary" @click="$router.push('/register')">Register</v-btn>
+  <v-btn color="primary" @click="$router.push('/signup')">Register</v-btn>
 </div>
     </nav>
 

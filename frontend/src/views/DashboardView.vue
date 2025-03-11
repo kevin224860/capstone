@@ -7,27 +7,43 @@
       <PortfolioBox :portfolio="portfolio" :isMobile="isMobile" />
 
       <div class="options">
-        <button class="add-stock-btn">Document Stock <i class="fa-solid fa-plus"> </i></button>
+        <button class="add-stock-btn"  @click="toggleAddStockModal">Document Stock <i class="fa-solid fa-plus"> </i></button>
         <button class="generate-suggestion-btn">Get Suggestions <i class="fa-solid fa-bolt"> </i></button>
       </div>
     </div>
   </div>
+  
+  <AddStockComponent :show="showAddStockModal" @close="showAddStockModal = false" @stock-added="refreshStocks" />
 </template>
 
 <script>
 import axios from "axios";
 import PortfolioBox from "@/components/PortfolioBox.vue";
+import AddStockComponent from "@/components/AddStockComponent.vue";
+
 
 export default {
   name: "DashboardView",
   components: {
-    PortfolioBox
+    PortfolioBox,
+    AddStockComponent
   },
   data() {
     return {
       firstName: "",
       portfolio: [],
       isMobile: window.innerWidth <= 790,
+      showModal: false,
+      industries: [],
+      stock: { 
+        symbol: "",
+        industry: null,
+        number: null,
+        price_per_share: "",
+        date: "",
+      },
+      showAddStockModal: false,
+      errors: {}
     };
   },
   async created() {
@@ -57,6 +73,25 @@ export default {
     }
   },
   methods: {
+    toggleAddStockModal() {
+    this.showAddStockModal = !this.showAddStockModal;
+  },
+  async refreshStocks() {
+    await this.fetchStocks(); // Refresh the stock list
+  },
+  
+    async fetchIndustries(){
+      try{
+        const response = await axios.get(`${process.env.VUE_APP_URL}${process.env.VUE_APP_INDUSTRIES}`);
+        this.industries = response.data.industries.map(industry => ({
+          id: industry[0], 
+          name: industry[1]
+        }));
+
+      }catch (error) {
+        console.error("Error fetching industries:", error);
+      }
+    },
     async getPortfolio() {
       try {
         const path = `${process.env.VUE_APP_URL}${process.env.VUE_APP_PORTFOLIO}`;
@@ -106,6 +141,11 @@ export default {
   text-align: center;
 }
 
+.error {
+  color: red;
+  font-size: 14px;
+  margin-top: 5px;
+}
 
 .desktop-view {
   display: block;
@@ -147,13 +187,7 @@ th {
   color: white;
 }
 
-tbody tr:nth-child(even) {
-  background: #f2f2f2;
-}
 
-tbody tr:hover {
-  background: #ddd;
-}
 
 /* Stock Card Styling for Mobile */
 .stock-card {

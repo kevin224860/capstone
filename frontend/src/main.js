@@ -25,7 +25,7 @@ axios.interceptors.response.use(
         // If the backend returns 401 Unauthorized
         localStorage.removeItem("token"); // Clear token from localStorage
         delete axios.defaults.headers.common["Authorization"]; // Remove the header
-        router.push("//login"); // Redirect to login page
+        router.push("/login"); // Redirect to login page
       }
       return Promise.reject(error);
     }
