@@ -1,11 +1,23 @@
 <template>
-  <div class="dashboard-container">
-    <div class="content">
+  <div class="app-container">
+    <AppNavbar />
+    
+    <div class="dashboard-content">
       <h1 v-if="firstName">Hello, {{ firstName }}! Welcome to your Dashboard</h1>
-      <h1 v-else>ERROR Cannot connect to account</h1>
+      <h1 v-else class="error">ERROR: Cannot connect to account</h1>
 
       <PortfolioBox :portfolio="portfolio" :isMobile="isMobile" />
 
+      <div class="action-buttons">
+        <button class="action-btn stock-btn" @click="documentStock">
+          <i class="fas fa-plus"></i>
+          Document Stock
+        </button>
+        <button class="action-btn suggestion-btn" @click="generateSuggestions">
+          <i class="fas fa-bolt"></i>
+          Get Suggestions
+        </button>
+      </div>
       <div class="options">
         <button class="add-stock-btn"  @click="toggleAddStockModal">Document Stock <i class="fa-solid fa-plus"> </i></button>
         <button class="generate-suggestion-btn">Get Suggestions <i class="fa-solid fa-bolt"> </i></button>
@@ -18,6 +30,7 @@
 
 <script>
 import axios from "axios";
+import AppNavbar from "@/components/AppNavbar.vue";
 import PortfolioBox from "@/components/PortfolioBox.vue";
 import AddStockComponent from "@/components/AddStockComponent.vue";
 
@@ -25,6 +38,7 @@ import AddStockComponent from "@/components/AddStockComponent.vue";
 export default {
   name: "DashboardView",
   components: {
+    AppNavbar,
     PortfolioBox,
     AddStockComponent
   },
@@ -52,7 +66,6 @@ export default {
 
     const token = localStorage.getItem("token");
     if (!token) {
-      console.warn("No token found, redirecting to login...");
       this.$router.push("/login");
       return;
     }
@@ -63,12 +76,9 @@ export default {
       const response = await axios.get(`${process.env.VUE_APP_URL}${process.env.VUE_APP_DASHBOARD}`, {
         withCredentials: true
       });
-
       this.firstName = response.data.first_name;
       this.getPortfolio();
-
     } catch (error) {
-      console.warn("Session expired or unauthorized. Redirecting to login.");
       this.$router.push("/login");
     }
   },
@@ -104,22 +114,52 @@ export default {
     updateScreenSize() {
       this.isMobile = window.innerWidth <= 790;
     },
+    documentStock() {
+      // Add document stock logic
+    },
+    generateSuggestions() {
+      this.$router.push('/suggestions');
+    }
   },
   beforeUnmount() {
     window.removeEventListener("resize", this.updateScreenSize);
-  },
+  }
 };
 </script>
-<style scoped>
 
-.dashboard-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-family: Arial, sans-serif;
+<style scoped>
+.app-container {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+}
+
+.dashboard-content {
+  max-width: 1200px;
+  margin: 80px auto 0;
   padding: 20px;
 }
 
+h1 {
+  color: #2c3e50;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.error {
+  color: #dc3545;
+  text-align: center;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 40px;
+}
+
+.action-btn {
+  padding: 12px 24px;
+}
 .content {
   text-align: center;
   width: 100%;
@@ -227,89 +267,43 @@ th {
 button {
   padding: 8px 12px;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
+  font-size: 1rem;
   cursor: pointer;
-  font-size: 14px;
-  margin-right: 5px;
-}
-
-.edit-btn {
-  background: #28a745;
-  color: white;
-}
-
-.edit-btn:hover {
-  background: #1a6b2d;
-  color: white;
-}
-
-.delete-btn {
-  background: #dc3545;
-  color: white;
-}
-
-.delete-btn:hover {
-  background: #a32734;
-  color: white;
-}
-
-.options {
+  transition: all 0.3s ease;
   display: flex;
-  flex-wrap: wrap;
-  flex-direction: row;
-  gap: 25px;
+  align-items: center;
+  gap: 8px;
 }
-.add-stock-btn {
-  display: block;
-  margin: 20px auto;
-  background: #007bff;
+
+.stock-btn {
+  background-color: #007bff;
   color: white;
-  padding: 10px 15px;
-  border-radius: 5px;
-  font-size: 16px;
 }
 
-.add-stock-btn:hover {
-  background: #0056b3;
-}
-
-.generate-suggestion-btn{
-  display: block;
-  margin: 20px auto;
-  background: #007bff;
+.suggestion-btn {
+  background-color: #28a745;
   color: white;
-  padding: 10px 15px;
-  border-radius: 5px;
-  font-size: 16px;
 }
 
-.generate-suggestion-btn:hover{
-  background: #0056b3;
+.action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 @media (max-width: 790px) {
-  .desktop-view {
-    display: none;
+  .dashboard-content {
+    padding: 15px;
+    margin-top: 70px;
   }
-  .mobile-view {
-    display: block;
+
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .action-btn {
+    width: 100%;
+    justify-content: center;
   }
 }
-
-/* Expand transition */
-.expand-enter-active, .expand-leave-active {
-  transition: max-height 0.3s ease-out, opacity 0.3s ease-in-out;
-  overflow: hidden;
-}
-
-.expand-enter-from, .expand-leave-to {
-  max-height: 0;
-  opacity: 0;
-}
-
-.expand-enter-to, .expand-leave-from {
-  max-height: 200px; /* Adjust this based on content height */
-  opacity: 1;
-}
-
 </style>
