@@ -117,6 +117,9 @@ def login():
         print("Error:", str(e))  # Print the actual error to Flask logs
         return jsonify({"error": str(e)}), 500
 
+@app.route('/', methods=["GET"])
+def index():
+    return jsonify({"status":"ok"}), 200
 
 # API to get all the info for the users dashboard
 @app.route("/api/dashboard", methods=["GET"])
@@ -432,4 +435,4 @@ def update_stock(entry_id):
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host="0.0.0.0", debug=True)
