@@ -9,7 +9,7 @@
       <PortfolioBox :portfolio="portfolio" :isMobile="isMobile" />
 
       <div class="action-buttons">
-        <button class="action-btn stock-btn" @click="documentStock">
+        <button class="action-btn stock-btn" @click="toggleAddStockModal">
           <i class="fas fa-plus"></i>
           Document Stock
         </button>
@@ -17,10 +17,6 @@
           <i class="fas fa-bolt"></i>
           Get Suggestions
         </button>
-      </div>
-      <div class="options">
-        <button class="add-stock-btn"  @click="toggleAddStockModal">Document Stock <i class="fa-solid fa-plus"> </i></button>
-        <button class="generate-suggestion-btn">Get Suggestions <i class="fa-solid fa-bolt"> </i></button>
       </div>
     </div>
   </div>
