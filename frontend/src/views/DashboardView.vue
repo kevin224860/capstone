@@ -18,26 +18,46 @@
           Get Suggestions
         </button>
       </div>
+      <div class="options">
+        <button class="add-stock-btn"  @click="toggleAddStockModal">Document Stock <i class="fa-solid fa-plus"> </i></button>
+        <button class="generate-suggestion-btn">Get Suggestions <i class="fa-solid fa-bolt"> </i></button>
+      </div>
     </div>
   </div>
+  
+  <AddStockComponent :show="showAddStockModal" @close="showAddStockModal = false" @stock-added="refreshStocks" />
 </template>
 
 <script>
 import axios from "axios";
 import AppNavbar from "@/components/AppNavbar.vue";
 import PortfolioBox from "@/components/PortfolioBox.vue";
+import AddStockComponent from "@/components/AddStockComponent.vue";
+
 
 export default {
   name: "DashboardView",
   components: {
     AppNavbar,
-    PortfolioBox
+    PortfolioBox,
+    AddStockComponent
   },
   data() {
     return {
       firstName: "",
       portfolio: [],
       isMobile: window.innerWidth <= 790,
+      showModal: false,
+      industries: [],
+      stock: { 
+        symbol: "",
+        industry: null,
+        number: null,
+        price_per_share: "",
+        date: "",
+      },
+      showAddStockModal: false,
+      errors: {}
     };
   },
   async created() {
@@ -63,6 +83,25 @@ export default {
     }
   },
   methods: {
+    toggleAddStockModal() {
+    this.showAddStockModal = !this.showAddStockModal;
+  },
+  async refreshStocks() {
+    await this.fetchStocks(); // Refresh the stock list
+  },
+  
+    async fetchIndustries(){
+      try{
+        const response = await axios.get(`${process.env.VUE_APP_URL}${process.env.VUE_APP_INDUSTRIES}`);
+        this.industries = response.data.industries.map(industry => ({
+          id: industry[0], 
+          name: industry[1]
+        }));
+
+      }catch (error) {
+        console.error("Error fetching industries:", error);
+      }
+    },
     async getPortfolio() {
       try {
         const path = `${process.env.VUE_APP_URL}${process.env.VUE_APP_PORTFOLIO}`;
@@ -120,6 +159,113 @@ h1 {
 
 .action-btn {
   padding: 12px 24px;
+}
+.content {
+  text-align: center;
+  width: 100%;
+  max-width: 800px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+
+.portfolio-box {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
+  width: 100%;
+  max-width: 800px;
+  text-align: center;
+}
+
+.error {
+  color: red;
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+.desktop-view {
+  display: block;
+}
+
+.mobile-view {
+  display: none;
+}
+
+table {
+  width: 100%;
+  border-collapse: separate;
+  margin-top: 10px;
+  border: 2px solid black;
+  border-radius: 10px;
+  border-spacing: 0;
+}
+
+th:first-child {
+  border-top-left-radius: 8px;
+}
+
+th:last-child {
+  border-top-right-radius: 8px;
+}
+
+tbody tr:last-child td:first-child {
+  border-bottom-left-radius: 10px;
+}
+
+th, td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+th {
+  background: #007bff;
+  color: white;
+}
+
+
+
+/* Stock Card Styling for Mobile */
+.stock-card {
+  background: #ffffff;
+  margin: 10px 0;
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.stock-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  padding: 10px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  background: #007bff;
+  color: white;
+  border-radius: 6px;
+}
+
+.expand-icon {
+  font-size: 1.5rem;
+}
+
+.stock-details {
+  text-align: left;
+  padding: 10px;
+}
+
+.button-group {
+  margin-top: 10px;
+}
+
+button {
+  padding: 8px 12px;
   border: none;
   border-radius: 8px;
   font-size: 1rem;

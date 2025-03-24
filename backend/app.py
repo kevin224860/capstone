@@ -7,6 +7,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from datetime import timedelta
 from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, JWTManager
+import re
 
 # Load environment variables
 load_dotenv()
@@ -170,8 +171,9 @@ def get_portfolio():
         user_id = user[0]  # Extract the user_ID
 
         # Get stock entries for this user
-        cur.execute("SELECT s.stock, i.name, s.number, s.price_per_share, s.date FROM StockEntry s INNER JOIN Industry i ON s.industry_ID = i.industry_ID WHERE user_ID = %s", (user_id,))
-        stocks = cur.fetchall()
+        cur.execute("SELECT s.entry_ID, s.stock, i.name, s.number, s.price_per_share, s.date FROM StockEntry s INNER JOIN Industry i ON s.industry_ID = i.industry_ID WHERE user_ID = %s ORDER BY entry_ID", (user_id,))
+        columns = ["entry_ID", "stock", "name", "number", "price_per_share", "date"]
+        stocks = [dict(zip(columns, row)) for row in cur.fetchall()]
         cur.close()
         conn.close()
         print(stocks)
@@ -266,6 +268,168 @@ def get_suggestions():
     finally:
         cur.close()
         conn.close()
+@app.route("/api/industries", methods=["GET"])
+def get_industries():
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("SELECT * from Industry;")
+    industries = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    return jsonify({
+            'industries': industries,
+            'status': 'success'
+        })
+
+@app.route('/api/addstock', methods=['POST'])
+@jwt_required()
+def add_stock():
+    data = request.get_json()
+    user_email = get_jwt_identity()
+    symbol = data['stock']
+    industry = data['industry_id']
+    try:
+        number = int(data['number'])  # Convert to integer
+    except ValueError:
+        return jsonify({"error": "Number must be a positive integer"}), 400
+    
+    price_per_share = data['price_per_share']
+    date = data['date']
+
+    print("Received data:", data) 
+
+    if not all([symbol, industry, number, price_per_share, date]):
+        return jsonify({"error": "All fields (symbol, industry, number, price_per_share, date) are required"}), 400
+
+    symbol_regex=r'^[A-Z0-9]{1,5}([.\-][A-Z0-9]{1,3})?$'
+    if not re.match(symbol_regex, symbol):
+        return jsonify({"error": "Invalid stock ticker symbol"}), 400 
+
+    numprice_pattern = r'^\d+(\.\d{1,2})?$'
+    if not isinstance(price_per_share, (int, float)) or price_per_share <= 0:
+        return jsonify({"error": "Invalid price per share"}), 400 
+
+    if not isinstance(number, int) or number <= 0:
+        return jsonify({"error": "Number must be a positive integer"}), 400
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("SELECT user_ID FROM AccountUser WHERE email = %s", (user_email,))
+        doesExist = cur.fetchone()
+        print(doesExist[0])
+        # cannot have an account with the same email address
+        if not doesExist:
+            return jsonify({"error": "An error occured"}), 400
+
+        cur.execute(
+            "INSERT INTO StockEntry (user_ID, Industry_ID, stock, number, date, price_per_share) VALUES (%s, %s, %s, %s, %s, %s) RETURNING entry_ID",
+            (doesExist[0], industry, symbol, number, date, price_per_share)
+        )
+        stock_id = cur.fetchone()[0]
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return jsonify({"message": "User registered successfully", "stock_id": stock_id}), 201
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+
+@app.route("/api/portfolio/<int:entry_id>", methods=["DELETE"])
+@jwt_required()
+def delete_stock(entry_id):
+    user_email = get_jwt_identity()
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Check if user exists
+        cur.execute("SELECT user_ID FROM AccountUser WHERE email = %s", (user_email,))
+        user = cur.fetchone()
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        user_id = user[0]  # Extract the user_ID
+        
+        cur.execute("SELECT entry_ID FROM StockEntry WHERE entry_ID = %s AND user_ID = %s", (entry_id, user_id))
+        stock_entry = cur.fetchone()
+
+        if not stock_entry:
+            return jsonify({"error": "Stock not found"}), 404
+
+        cur.execute(
+            "DELETE FROM StockEntry WHERE entry_ID = %s AND user_ID = %s",
+            (entry_id, user_id)
+        )
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return jsonify({"message": "User deleted stock successfully", "entry_id": entry_id}), 200
+
+    except Exception as e:
+        print(f"🔥 Error deleting stock: {str(e)}")
+
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/portfolio/edit/<int:entry_id>", methods=["PUT"])
+@jwt_required()
+def update_stock(entry_id):
+    data = request.get_json()
+    user_email = get_jwt_identity()
+    symbol = data['stock']
+    industry = data['name']
+    try:
+        number = int(data['number'])  # Convert to integer
+    except ValueError:
+        return jsonify({"error": "Number must be a positive integer"}), 400
+    
+    price_per_share = data['price_per_share']
+    date = data['date']
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Check if user exists
+        cur.execute("SELECT user_ID FROM AccountUser WHERE email = %s", (user_email,))
+        user = cur.fetchone()
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        user_id = user[0]  # Extract the user_ID
+        
+        cur.execute("SELECT entry_ID FROM StockEntry WHERE entry_ID = %s AND user_ID = %s", (entry_id, user_id))
+        stock_entry = cur.fetchone()
+
+        if not stock_entry:
+            return jsonify({"error": "Stock not found"}), 404
+
+        cur.execute(
+            "UPDATE StockEntry SET entry_ID = %s, industry_id = %s, stock = %s, number = %s, price_per_share = %s, date = %s WHERE entry_ID = %s AND user_ID = %s",
+            (entry_id, industry, symbol, number, price_per_share, date, entry_id, user_id)
+        )
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return jsonify({"message": "Stock updated successfully", "entry_id": entry_id}), 200
+
+    except Exception as e:
+        print(f"🔥 Error updating stock: {str(e)}")
+
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
