@@ -28,7 +28,7 @@ export default {
         console.log("Logout error:", error);
       }
       localStorage.removeItem("token");
-      window.location.href = "/login";
+      window.location.href = "/#/login";
     }
   }
 };
