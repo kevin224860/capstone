@@ -41,45 +41,73 @@ def get_db_connection():
 # API to responsible for the signup of users
 @app.route('/api/signup', methods=['POST'])
 def signup():
-    # get all the values of the text fields from the frontend
-    data = request.get_json()
-    first_name = data['firstName']
-    last_name = data['lastName']
-    email = data['email']
-    password = data['password']
-
-    # make sure that all fields are filled out
-    if not all([first_name, last_name, email, password]):
-        return jsonify({"error": "All fields are required"}), 400
-
-    # hash password because the database stores a one way encrypted password for security
-    hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-
-    # connect to the database
+    """Enhanced signup endpoint with proper validation"""
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No JSON data received"}), 400
 
-        cur.execute("SELECT email FROM AccountUser WHERE email = %s", (email,))
-        doesExist = cur.fetchone()
+        # Validate required fields
+        required_fields = ['firstName', 'lastName', 'email', 'password']
+        missing = [field for field in required_fields if field not in data]
+        if missing:
+            return jsonify({"error": f"Missing fields: {', '.join(missing)}"}), 400
 
-        # cannot have an account with the same email address
-        if doesExist:
-            return jsonify({"error": "An account already exists with that email"}), 400
+        # Sanitize inputs
+        first_name = data['firstName'].strip()
+        last_name = data['lastName'].strip()
+        email = data['email'].lower().strip()
+        password = data['password'].strip()
 
-        cur.execute(
-            "INSERT INTO AccountUser (first_name, last_name, email, password) VALUES (%s, %s, %s, %s) RETURNING id",
-            (first_name, last_name, email, hashed_password)
+        # Validate email format
+        if not re.match(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", email):
+            return jsonify({"error": "Invalid email format"}), 400
+
+        # Validate password complexity
+        password_pattern = re.compile(
+            r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$'
         )
-        user_id = cur.fetchone()[0]
-        conn.commit()
-        cur.close()
-        conn.close()
+        if not password_pattern.match(password):
+            return jsonify({
+                "error": "Password must contain: 8+ characters, 1 uppercase, 1 lowercase, 1 number, 1 symbol (@$!%*?&)"
+            }), 400
 
-        return jsonify({"message": "User registered successfully", "user_id": user_id}), 201
+        conn = get_db_connection()
+        try:
+            with conn.cursor() as cur:
+                # Check existing email
+                cur.execute("SELECT email FROM AccountUser WHERE email = %s", (email,))
+                if cur.fetchone():
+                    return jsonify({"error": "Email already registered"}), 409
+
+                # Hash password
+                hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+
+                # Create user
+                cur.execute(
+                    """INSERT INTO AccountUser (first_name, last_name, email, password)
+                    VALUES (%s, %s, %s, %s) RETURNING user_id""",
+                    (first_name, last_name, email, hashed_password)
+                )
+                user_id = cur.fetchone()[0]
+                conn.commit()
+
+                return jsonify({
+                    "message": "User registered successfully",
+                    "user_id": user_id,
+                    "email": email
+                }), 201
+
+        except psycopg2.DatabaseError as e:
+            conn.rollback()
+            app.logger.error(f"Database error: {str(e)}")
+            return jsonify({"error": "Database operation failed"}), 500
+        finally:
+            conn.close()
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        app.logger.error(f"Unexpected error: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
 
 
 # API used to log in to an account
