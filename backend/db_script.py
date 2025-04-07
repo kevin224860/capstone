@@ -96,7 +96,27 @@ def create_tables():
         ('ABNB', 'Airbnb', '/stocks'),
         ('AIG', 'American International Group', '/stocks'),
         ('AMGN', 'Amgen', '/stocks'),
-        ('CMG', 'Chipotle Mexican Grill', '/stocks');
+        ('CMG', 'Chipotle Mexican Grill', '/stocks')
+        ('MSFT', 'Microsoft Corporation', '/stocks'),
+        ('GOOGL', 'Alphabet Inc. (Google)', '/stocks'),
+        ('TSLA', 'Tesla Inc.', '/stocks'),
+        ('META', 'Meta Platforms Inc.', '/stocks'),
+        ('NVDA', 'NVIDIA Corporation', '/stocks'),
+        ('JPM', 'JPMorgan Chase & Co.', '/stocks'),
+        ('UNH', 'UnitedHealth Group Incorporated', '/stocks'),
+        ('XOM', 'Exxon Mobil Corporation', '/stocks'),
+        ('V', 'Visa Inc.', '/stocks'),
+        ('JNJ', 'Johnson & Johnson', '/stocks'),
+        ('PG', 'Procter & Gamble Co.', '/stocks'),                
+        ('HD', 'Home Depot Inc.', '/stocks'),                     
+        ('MA', 'Mastercard Inc.', '/stocks'),                     
+        ('BAC', 'Bank of America Corp.', '/stocks'),              
+        ('PFE', 'Pfizer Inc.', '/stocks'),                        
+        ('T', 'AT&T Inc.', '/stocks'),                            
+        ('BA', 'Boeing Company', '/stocks'),                      
+        ('CVX', 'Chevron Corporation', '/stocks'),                
+        ('PEP', 'PepsiCo, Inc.', '/stocks'),                      
+        ('COST', 'Costco Wholesale Corporation', '/stocks');      
         """,
         """
         INSERT INTO StockEntry (user_ID, Industry_ID, stock, number, date, price_per_share) VALUES
@@ -110,13 +130,33 @@ def create_tables():
         """,
         """
         INSERT INTO AISuggestions (suggestion_ID, Industry_ID, stock_ID, Rating) VALUES
-        (1, 8, 1, 4.5),
-        (2, 7, 2, 4.0),
-        (3, 4, 3, 4.7),
-        (4, 4, 4, 4.2),
-        (5, 7, 5, 3.9),
-        (6, 6, 6, 4.4),
-        (7, 4, 7, 4.8);
+        (1, 8, 1, 4.5),      -- AAPL, Information Technology
+        (2, 7, 2, 4.0),      -- AFL, Financials
+        (3, 4, 3, 4.7),      -- AMZN, Consumer Discretionary
+        (4, 4, 4, 4.2),      -- ABNB, Consumer Discretionary
+        (5, 7, 5, 3.9),      -- AIG, Financials
+        (6, 6, 6, 4.4),      -- AMGN, Health Care
+        (7, 4, 7, 4.8),      -- CMG, Consumer Discretionary
+        (8, 8, 8, 4.6),      -- MSFT, Information Technology
+        (9, 8, 9, 4.7),      -- GOOGL, Information Technology
+        (10, 4, 10, 4.4),    -- TSLA, Consumer Discretionary
+        (11, 8, 11, 4.5),    -- META, Information Technology
+        (12, 8, 12, 4.9),    -- NVDA, Information Technology
+        (13, 7, 13, 4.3),    -- JPM, Financials
+        (14, 6, 14, 4.2),    -- UNH, Health Care
+        (15, 1, 15, 3.8),    -- XOM, Energy
+        (16, 7, 16, 4.4),    -- V, Financials
+        (17, 6, 17, 4.5),    -- JNJ, Health Care
+        (18, 5, 18, 4.3),     -- PG, Consumer Staples
+        (19, 4, 19, 4.2),     -- HD, Consumer Discretionary
+        (20, 7, 20, 4.6),     -- MA, Financials
+        (21, 7, 21, 4.1),     -- BAC, Financials
+        (22, 6, 22, 4.0),     -- PFE, Health Care
+        (23, 9, 23, 3.9),     -- T, Communication Services
+        (24, 3, 24, 4.4),     -- BA, Industrials
+        (25, 1, 25, 4.2),     -- CVX, Energy
+        (26, 5, 26, 4.5),     -- PEP, Consumer Staples
+        (27, 5, 27, 4.7);     -- COST, Consumer Staples
         """
     ]
 
