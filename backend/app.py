@@ -8,6 +8,7 @@ from psycopg2.extras import RealDictCursor
 from datetime import timedelta
 from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, JWTManager
 import re
+import StockAI
 
 # Load environment variables
 load_dotenv()
@@ -432,6 +433,16 @@ def update_stock(entry_id):
     except Exception as e:
         print(f"🔥 Error updating stock: {str(e)}")
 
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/stock_ai', methods=['GET'])
+def stock_ai():
+    try:
+        # Call the main_ai function from the StockAI module
+        StockAI.main_ai()
+        return jsonify({"message": "AI model executed successfully"}), 200
+    except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
